@@ -1,0 +1,10 @@
+{
+  "name": "aviones-distribuidos",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "start:backend": "npm --prefix backend run start:dev",
+    "start:frontend": "npm --prefix frontend run dev"
+  }
+}

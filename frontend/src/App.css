@@ -1,0 +1,24 @@
+.app {
+  font-family: system-ui, sans-serif;
+  padding: 2rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin-bottom: 1rem;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+}
+
+code {
+  background: #f4f4f4;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+}
