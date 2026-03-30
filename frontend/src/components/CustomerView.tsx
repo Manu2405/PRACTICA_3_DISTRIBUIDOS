@@ -205,14 +205,14 @@ export default function CustomerView(props: CustomerViewProps) {
   }, [isWalletModalOpen, onNewSearch]);
 
   // Simulación Automática (Modo Presentación)
-  // Como no hay backend, esperamos 10 segundos asumiendo que el usuario está escaneando
+  // Como no hay backend, esperamos 15 segundos asumiendo que el usuario está escaneando
   // con su app de Google Wallet local y guardándolo en su teléfono.
   useEffect(() => {
     let tScan: number;
     if (step === 5 && boardingRecord && !isWalletModalOpen && !isScanningWallet) {
       tScan = window.setTimeout(() => {
         handleWalletScan();
-      }, 10000); // 10 Segundos de espera para que hagan la demostración con el teléfono
+      }, 15000); // 15 Segundos de espera para que hagan la demostración con el teléfono
     }
     return () => window.clearTimeout(tScan);
   }, [step, boardingRecord, isWalletModalOpen, isScanningWallet]);

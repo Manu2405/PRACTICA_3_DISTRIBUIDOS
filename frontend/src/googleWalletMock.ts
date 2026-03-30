@@ -64,8 +64,8 @@ export function buildGoogleWalletFlightDemoPayload(record: BoardingRecord) {
       },
       barcode: {
         type: 'QR_CODE',
-        value: qrValue,
-        alternateText: qrValue,
+        value: `BOARDING-${record.flight}-${record.passport}`,
+        alternateText: record.passport,
       },
       textModulesData: [
         { header: 'DOCUMENTO', body: record.passport, id: 'passport' },

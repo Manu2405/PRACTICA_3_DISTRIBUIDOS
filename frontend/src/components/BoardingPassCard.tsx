@@ -10,22 +10,18 @@ type BoardingPassCardProps = {
 };
 
 function BarcodeBlock({ value }: { value: string }) {
-  // Generate deterministic but random-looking bars
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(i);
-    hash |= 0;
-  }
-  const str = Math.abs(hash).toString(16).repeat(10);
-  const bars = str.slice(0, 50).split('').map((ch, i) => {
-    const w = ((ch.codePointAt(0) ?? 0) % 4) + 1;
-    return <div key={`${i}-${ch}`} className="shrink-0 bg-slate-800" style={{ width: w, height: 40 }} />;
-  });
+  // Sustituimos el Barcode 1D por un código QR estándar de embarque.
   return (
-    <div className="w-full flex justify-center py-2">
-      <div className="inline-flex items-end justify-center gap-[2px] overflow-hidden opacity-90">
-        {bars}
-      </div>
+    <div className="w-full flex flex-col items-center justify-center p-2 bg-white rounded-xl shadow-inner border border-slate-200">
+      <QRCodeSVG
+        value={value}
+        size={80}
+        level="M"
+        includeMargin={false}
+        bgColor="#ffffff"
+        fgColor="#0f172a"
+      />
+      <span className="text-[9px] font-bold text-slate-500 mt-1 tracking-widest uppercase">QR Embarque</span>
     </div>
   );
 }
