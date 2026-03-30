@@ -1,5 +1,6 @@
 // src/prisma/seed.ts
-// Ejecutar con: npx ts-node src/prisma/seed.ts
+// Ejecutar: npm run db:seed (desde backend/, con .env y esquema aplicado)
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

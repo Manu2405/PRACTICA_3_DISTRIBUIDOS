@@ -1,0 +1,73 @@
+### Base
+@base = http://localhost:3001
+
+### Aeropuertos
+GET {{base}}/aeropuertos
+GET {{base}}/aeropuertos/1
+
+### Vuelos y asientos
+GET {{base}}/vuelos
+GET {{base}}/vuelos/1
+GET {{base}}/vuelos/1/asientos
+
+### Dijkstra (grafo de ejemplo)
+GET {{base}}/shortest-path?from=A&to=F
+GET {{base}}/shortest-path?from=X&to=F
+
+### Operaciones (ajustar IDs tras el seed: asientoId, pasajeroId, reservaId, ventaId)
+# @name reserva
+POST {{base}}/reservas
+Content-Type: application/json
+
+{
+  "asientoId": 1,
+  "pasajeroId": 1,
+  "nodoOrigen": "NODO_1",
+  "minutosExpiracion": 30
+}
+
+### Venta directa (asiento LIBRE)
+POST {{base}}/ventas
+Content-Type: application/json
+
+{
+  "asientoId": 2,
+  "pasajeroId": 1
+}
+
+### Venta desde reserva (usar reservaId devuelto por POST /reservas)
+POST {{base}}/ventas
+Content-Type: application/json
+
+{
+  "asientoId": 1,
+  "pasajeroId": 1,
+  "reservaId": 1
+}
+
+### Anulación de reserva
+POST {{base}}/anulaciones
+Content-Type: application/json
+
+{
+  "asientoId": 1,
+  "pasajeroId": 1,
+  "reservaId": 1,
+  "tipo": "ANULACION",
+  "motivo": "Prueba"
+}
+
+### Devolución de venta
+POST {{base}}/anulaciones
+Content-Type: application/json
+
+{
+  "asientoId": 2,
+  "pasajeroId": 1,
+  "ventaId": 1,
+  "tipo": "DEVOLUCION",
+  "motivo": "Prueba"
+}
+
+### Auditoría de asiento
+GET {{base}}/asientos/1/auditoria

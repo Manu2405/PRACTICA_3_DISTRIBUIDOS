@@ -1,28 +1,27 @@
-// src/main.ts  — REEMPLAZA el archivo existente
 import 'reflect-metadata';
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  (await app).enableCors({
-    origin: '*',       // En producción limitar al dominio del frontend
+  app.enableCors({
+    origin: '*',
     methods: 'GET,POST,PUT,DELETE',
   });
 
-  // Pipe global para validación de DTOs
-  (await app).useGlobalPipes(
+  app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,   // quita campos no declarados en el DTO
+      whitelist: true,
       forbidNonWhitelisted: false,
-      transform: true,   // convierte tipos automáticamente (string→number)
+      transform: true,
     }),
   );
 
-  await (await app).listen(3001);
+  await app.listen(3001);
   logger.log('Backend escuchando en http://localhost:3001');
   logger.log('Endpoints disponibles:');
   logger.log('  GET  /aeropuertos');
