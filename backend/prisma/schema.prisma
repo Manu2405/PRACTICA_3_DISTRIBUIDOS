@@ -1,0 +1,177 @@
+// prisma/schema.prisma
+// Ejecutar: npx prisma generate && npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Aeropuerto {
+  id        Int      @id @default(autoincrement())
+  codigo    String   @unique @db.VarChar(10)
+  nombre    String   @db.VarChar(100)
+  ciudad    String   @db.VarChar(100)
+  pais      String   @default("Bolivia") @db.VarChar(100)
+  creadoEn  DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+
+  vuelosOrigen  Vuelo[] @relation("VueloOrigen")
+  vuelosDestino Vuelo[] @relation("VueloDestino")
+
+  @@map("Aeropuertos")
+}
+
+model Aeronave {
+  id            Int    @id @default(autoincrement())
+  modelo        String @db.VarChar(50)
+  capacidadEco  Int    @map("capacidad_eco")
+  capacidadBus  Int    @default(0) @map("capacidad_bus")
+  capacidadPri  Int    @default(0) @map("capacidad_pri")
+  creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+
+  vuelos Vuelo[]
+
+  @@map("Aeronaves")
+}
+
+model Vuelo {
+  id             Int      @id @default(autoincrement())
+  numeroVuelo    String   @unique @map("numero_vuelo") @db.VarChar(20)
+  origenId       Int      @map("origen_id")
+  destinoId      Int      @map("destino_id")
+  aeronaveId     Int      @map("aeronave_id")
+  salidaUtc      DateTime @map("salida_utc") @db.DateTimeOffset
+  llegadaUtc     DateTime @map("llegada_utc") @db.DateTimeOffset
+  precioBaseUsd  Decimal  @map("precio_base_usd") @db.Decimal(10, 2)
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+
+  origen   Aeropuerto @relation("VueloOrigen",  fields: [origenId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+  destino  Aeropuerto @relation("VueloDestino", fields: [destinoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aeronave Aeronave   @relation(fields: [aeronaveId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asientos Asiento[]
+
+  @@map("Vuelos")
+}
+
+model ClaseTarifaria {
+  id            Int     @id @default(autoincrement())
+  codigo        String  @unique @db.VarChar(10)
+  nombre        String  @db.VarChar(50)
+  multiplicador Decimal @default(1.0) @db.Decimal(4, 2)
+
+  asientos Asiento[]
+
+  @@map("ClasesTarifarias")
+}
+
+model Asiento {
+  id       Int    @id @default(autoincrement())
+  vueloId  Int    @map("vuelo_id")
+  claseId  Int    @map("clase_id")
+  numero   String @db.VarChar(5)
+  estado   String @default("LIBRE") @db.VarChar(20)
+  creadoEn DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+
+  vuelo   Vuelo          @relation(fields: [vueloId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  clase   ClaseTarifaria @relation(fields: [claseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  reservas    Reserva[]
+  ventas      Venta[]
+  anulaciones Anulacion[]
+  auditoria   AuditoriaAsiento[]
+
+  @@unique([vueloId, numero])
+  @@map("Asientos")
+}
+
+model Pasajero {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @db.VarChar(100)
+  apellido  String   @db.VarChar(100)
+  documento String   @unique @db.VarChar(30)
+  email     String?  @db.VarChar(150)
+  creadoEn  DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+
+  reservas    Reserva[]
+  ventas      Venta[]
+  anulaciones Anulacion[]
+
+  @@map("Pasajeros")
+}
+
+model Reserva {
+  id           Int      @id @default(autoincrement())
+  asientoId    Int      @map("asiento_id")
+  pasajeroId   Int      @map("pasajero_id")
+  nodoOrigen   String   @default("NODO_1") @map("nodo_origen") @db.VarChar(20)
+  relojVector  String?  @map("reloj_vector") @db.VarChar(100)
+  creadoEn     DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+  expiraEn     DateTime? @map("expira_en") @db.DateTimeOffset
+  estado       String   @default("ACTIVA") @db.VarChar(20)
+
+  asiento   Asiento  @relation(fields: [asientoId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pasajero  Pasajero @relation(fields: [pasajeroId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ventas    Venta[]
+  anulaciones Anulacion[]
+
+  @@map("Reservas")
+}
+
+model Venta {
+  id          Int      @id @default(autoincrement())
+  asientoId   Int      @map("asiento_id")
+  pasajeroId  Int      @map("pasajero_id")
+  reservaId   Int?     @map("reserva_id")
+  montoUsd    Decimal  @map("monto_usd") @db.Decimal(10, 2)
+  nodoOrigen  String   @default("NODO_1") @map("nodo_origen") @db.VarChar(20)
+  relojVector String?  @map("reloj_vector") @db.VarChar(100)
+  creadoEn    DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+  estado      String   @default("CONFIRMADA") @db.VarChar(20)
+
+  asiento   Asiento   @relation(fields: [asientoId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pasajero  Pasajero  @relation(fields: [pasajeroId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reserva   Reserva?  @relation(fields: [reservaId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+  anulaciones Anulacion[]
+
+  @@map("Ventas")
+}
+
+model Anulacion {
+  id          Int      @id @default(autoincrement())
+  asientoId   Int      @map("asiento_id")
+  pasajeroId  Int      @map("pasajero_id")
+  reservaId   Int?     @map("reserva_id")
+  ventaId     Int?     @map("venta_id")
+  motivo      String?  @db.VarChar(200)
+  tipo        String   @db.VarChar(20)   // ANULACION | DEVOLUCION
+  nodoOrigen  String   @default("NODO_1") @map("nodo_origen") @db.VarChar(20)
+  relojVector String?  @map("reloj_vector") @db.VarChar(100)
+  creadoEn    DateTime @default(now()) @map("creado_en") @db.DateTimeOffset
+
+  asiento   Asiento  @relation(fields: [asientoId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pasajero  Pasajero @relation(fields: [pasajeroId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reserva   Reserva? @relation(fields: [reservaId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venta     Venta?   @relation(fields: [ventaId],    references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("Anulaciones")
+}
+
+model AuditoriaAsiento {
+  id           Int      @id @default(autoincrement())
+  asientoId    Int      @map("asiento_id")
+  estadoDesde  String   @map("estado_desde") @db.VarChar(20)
+  estadoHasta  String   @map("estado_hasta") @db.VarChar(20)
+  operacion    String   @db.VarChar(20)
+  referenciaId Int?     @map("referencia_id")
+  nodoOrigen   String   @default("NODO_1") @map("nodo_origen") @db.VarChar(20)
+  relojVector  String?  @map("reloj_vector") @db.VarChar(100)
+  timestampUtc DateTime @default(now()) @map("timestamp_utc") @db.DateTimeOffset
+
+  asiento Asiento @relation(fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("AuditoriaAsientos")
+}
