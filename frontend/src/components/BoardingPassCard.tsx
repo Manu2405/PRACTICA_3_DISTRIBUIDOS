@@ -6,6 +6,7 @@ type BoardingPassCardProps = {
   record: BoardingRecord;
   brandName: string;
   brandShort: string;
+  onSimulateScan?: () => void;
 };
 
 function BarcodeBlock({ value }: { value: string }) {
@@ -29,7 +30,7 @@ function BarcodeBlock({ value }: { value: string }) {
   );
 }
 
-export default function BoardingPassCard({ record, brandName, brandShort }: BoardingPassCardProps) {
+export default function BoardingPassCard({ record, brandName, brandShort, onSimulateScan }: BoardingPassCardProps) {
   const isSale = record.kind === 'compra';
   const stub = `${record.origin} → ${record.destination}`;
   const qrValue = boardingPassQrValue(record);

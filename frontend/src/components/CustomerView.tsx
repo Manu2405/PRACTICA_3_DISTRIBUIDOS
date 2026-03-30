@@ -1,7 +1,7 @@
-import { type MutableRefObject, useMemo, useRef, useState } from 'react';
+import { type MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardingRecord, City, CustomerStep, RouteOffer, SeatStateType } from '../types';
 import { canPurchase, canReserve, formatTimeInTz, syntheticPreviewRoute } from '../utils';
-import { downloadWalletDemoJson } from '../googleWalletMock';
+import { boardingPassQrValue, downloadWalletDemoJson } from '../googleWalletMock';
 import RouteMap from './RouteMap';
 import SeatMap, { SeatStateLegend } from './SeatMap';
 import BoardingPassCard from './BoardingPassCard';
@@ -174,7 +174,86 @@ export default function CustomerView(props: CustomerViewProps) {
 
   const [stepBusy, setStepBusy] = useState<{ show: boolean; msg: string }>({ show: false, msg: '' });
   const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isScanningWallet, setIsScanningWallet] = useState(false);
   const transitionLock = useRef(false);
+
+  const handleWalletScan = () => {
+    if (isScanningWallet) return;
+    setIsScanningWallet(true);
+    setTimeout(() => {
+      setIsScanningWallet(false);
+      setIsWalletModalOpen(true);
+    }, 1500);
+  };
+
+  // Detección de ESCÁNER LÁSER REAL (Lector de códigos de barras/QR USB/Bluetooth)
+  // Los escáneres físicos actúan como un teclado que escribe toda la cadena de datos en milisegundos y pulsa Enter.
+  const scannerBuffer = useRef<string>('');
+  const scannerTimeout = useRef<number | null>(null);
+
+  // Auto-regreso al inicio al terminar de escanear/validar
+  useEffect(() => {
+    let t: number;
+    if (isWalletModalOpen) {
+      t = window.setTimeout(() => {
+        setIsWalletModalOpen(false);
+        onNewSearch();
+      }, 4500);
+    }
+    return () => window.clearTimeout(t);
+  }, [isWalletModalOpen, onNewSearch]);
+
+  // Simulación Automática (Modo Presentación)
+  // Como no hay backend, esperamos 10 segundos asumiendo que el usuario está escaneando
+  // con su app de Google Wallet local y guardándolo en su teléfono.
+  useEffect(() => {
+    let tScan: number;
+    if (step === 5 && boardingRecord && !isWalletModalOpen && !isScanningWallet) {
+      tScan = window.setTimeout(() => {
+        handleWalletScan();
+      }, 10000); // 10 Segundos de espera para que hagan la demostración con el teléfono
+    }
+    return () => window.clearTimeout(tScan);
+  }, [step, boardingRecord, isWalletModalOpen, isScanningWallet]);
+
+  useEffect(() => {
+    if (step !== 5 || !boardingRecord) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignoramos teclas de control puro
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+      if (e.key === 'Enter') {
+        const buffer = scannerBuffer.current.trim();
+        // Validamos que la lectura real contenga datos del boleto (previene enters accidentales)
+        // Usamos una verificación parcial para evitar problemas con la configuración de idioma del teclado vs escáner
+        if (buffer.includes(boardingRecord.passport) || buffer.includes('SARP_BOARDING_PASS') || buffer.includes(boardingRecord.flight.replace(/\s+/g, ''))) {
+          e.preventDefault();
+          handleWalletScan();
+        }
+        scannerBuffer.current = '';
+        return;
+      }
+
+      // Evitamos letras sueltas como 'Tab', 'Shift', etc.
+      if (e.key.length === 1) {
+        scannerBuffer.current += e.key;
+      }
+      
+      // Limpiamos el buffer si tardan más de 120ms entre teclas (un humano tecleando, no un escáner)
+      if (scannerTimeout.current) window.clearTimeout(scannerTimeout.current);
+      scannerTimeout.current = window.setTimeout(() => {
+        scannerBuffer.current = '';
+      }, 120);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (scannerTimeout.current) window.clearTimeout(scannerTimeout.current);
+    };
+  }, [step, isScanningWallet, boardingRecord]);
 
   // Default sorted routes as they come from computeRoutes
   const sortedRoutes = useMemo(() => {
@@ -670,8 +749,19 @@ export default function CustomerView(props: CustomerViewProps) {
       {/* --- Paso 5 --- */}
       {step === 5 && boardingRecord && (
         <section className="mx-auto max-w-2xl space-y-8">
-          <BoardingPassCard record={boardingRecord} brandName={brand.name} brandShort={brand.shortName} />
+          <BoardingPassCard 
+            record={boardingRecord} 
+            brandName={brand.name} 
+            brandShort={brand.shortName} 
+            onSimulateScan={handleWalletScan} 
+          />
           <div className="flex flex-col items-center gap-4">
+            {isScanningWallet && (
+              <div className="flex w-full max-w-md items-center justify-center gap-3 text-teal-400 font-bold bg-slate-800 px-6 py-4 border border-teal-500/30 rounded-2xl shadow-lg mt-4">
+                <span className="w-5 h-5 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+                Detección exitosa. Sincronizando validación...
+              </div>
+            )}
             <button
               type="button"
               onClick={onNewSearch}
@@ -681,6 +771,47 @@ export default function CustomerView(props: CustomerViewProps) {
             </button>
           </div>
         </section>
+      )}
+
+      {/* Modal de Escaneo en Wallet */}
+      {isWalletModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all duration-300 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-3xl bg-slate-900 ring-1 ring-white/10 shadow-2xl overflow-hidden text-center p-8 animate-in zoom-in-50 duration-500 ease-out" onClick={e => e.stopPropagation()}>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/20 mb-6 animate-pulse">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">¡Escaneado Exitoso!</h3>
+            <p className="text-slate-400 text-sm mb-6">
+              El pasaje fue detectado e ingresado correctamente a tu Wallet.
+            </p>
+            <p className="text-xs text-teal-400 animate-pulse font-semibold mt-2 mb-6">
+              Volviendo al inicio automáticamente...
+            </p>
+            
+            <button
+              onClick={() => {
+                  setIsWalletModalOpen(false);
+                  if (boardingRecord) downloadWalletDemoJson(boardingRecord);
+                  // Después de descargar el JSON, vamos al inicio
+                  setTimeout(() => onNewSearch(), 500);
+              }}
+              className="w-full rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 px-6 py-3 font-bold transition-colors"
+            >
+              Descargar JSON de Demo
+            </button>
+            <button
+              onClick={() => {
+                setIsWalletModalOpen(false);
+                onNewSearch();
+              }}
+              className="w-full mt-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 font-bold transition-colors"
+            >
+              Cerrar y volver al inicio
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Modal de Mapa Interactivo */}
