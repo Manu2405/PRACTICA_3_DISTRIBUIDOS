@@ -9,13 +9,20 @@
   },
   "dependencies": {
     "dijkstrajs": "^1.0.3",
+    "leaflet": "^1.9.4",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.21",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.4",
     "typescript": "^5.5.4",
     "vite": "^5.4.0"
   }

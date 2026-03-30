@@ -1,10 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   margin: 0;
   min-height: 100vh;
-  background: #f5f7fb;
-  color: #111827;
+  background: #020617;
+  color: #f1f5f9;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Fondo animado (app shell) */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(125deg, #020617 0%, #0c1a2e 22%, #0e7490 48%, #0f172a 78%, #020617 100%);
+  background-size: 320% 320%;
+  animation: appGradient 22s ease-in-out infinite;
+}
+
+.app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.12), transparent 42%),
+    radial-gradient(circle at 85% 60%, rgba(129, 140, 248, 0.1), transparent 40%);
+  animation: appFloat 16s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+.app-shell-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Cpath fill='none' stroke='%2322d3ee' stroke-width='0.6' opacity='0.35' d='M0 220 Q150 100 300 220 T600 200'/%3E%3Cpath fill='none' stroke='%2314b8a6' stroke-width='0.5' opacity='0.3' d='M-20 320 Q200 180 420 300'/%3E%3Cpath fill='none' stroke='%23a5b4fc' stroke-width='0.4' opacity='0.25' d='M80 80 Q280 40 520 100'/%3E%3C/svg%3E");
+  background-size: 120% 120%;
+  background-position: 10% 30%;
+  animation: travelCurves 32s ease-in-out infinite;
+}
+
+@keyframes travelCurves {
+  0%,
+  100% {
+    background-position: 10% 30%;
+    transform: translateY(0);
+  }
+  50% {
+    background-position: 90% 70%;
+    transform: translateY(-12px);
+  }
+}
+
+.sarp-wing-drift {
+  animation: wingDrift 2.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes wingDrift {
+  0%,
+  100% {
+    transform: rotate(-5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(5deg) translateY(-2px);
+  }
+}
+
+.sarp-step-plane {
+  display: inline-block;
+  animation: planeHop 1.35s ease-in-out infinite;
+}
+
+@keyframes planeHop {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-10deg);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate(6px, -5px) rotate(10deg);
+    opacity: 1;
+  }
+}
+
+.sarp-brand-img {
+  animation: brandImgFloat 3.2s ease-in-out infinite;
+}
+
+@keyframes brandImgFloat {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.06);
+    filter: brightness(1.1);
+  }
+}
+
+.sarp-loading-plane {
+  animation: loadingPlane 2s ease-in-out infinite;
+}
+
+@keyframes loadingPlane {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-14deg) scale(1);
+  }
+  50% {
+    transform: translateY(-32px) rotate(14deg) scale(1.12);
+  }
+}
+
+@keyframes sarpLoadBar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.sarp-load-bar-inner {
+  animation: sarpLoadBar 1.1s ease-in-out infinite;
+}
+
+@keyframes appGradient {
+  0%,
+  100% {
+    background-position: 0% 40%;
+  }
+  50% {
+    background-position: 100% 60%;
+  }
+}
+
+@keyframes appFloat {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+/* Trayecto en mapa: guiones animados (el stroke/gradient va en el elemento SVG) */
+.route-flow-line {
+  fill: none;
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  stroke-dasharray: 1.2 1.8;
+  animation: routeDash 1.1s linear infinite;
+}
+
+@keyframes routeDash {
+  to {
+    stroke-dashoffset: -6;
+  }
+}
+
+.route-node-pulse {
+  animation: routePulse 2.2s ease-in-out infinite;
+}
+
+@keyframes routePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.2);
+  }
 }
