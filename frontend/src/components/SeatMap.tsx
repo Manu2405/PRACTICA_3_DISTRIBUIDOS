@@ -10,6 +10,7 @@ type SeatMapProps = {
   selectedSeat: string | null;
   onSelectSeat: (seat: string) => void;
   firstClassSeats: number;
+  columns: number;
 };
 
 const stateStyles: Record<SeatStateType, string> = {
@@ -22,7 +23,7 @@ const stateStyles: Record<SeatStateType, string> = {
     'cursor-not-allowed border-rose-400 bg-rose-600/40 text-rose-50 ring-1 ring-rose-300/50 animate-pulse',
 };
 
-export default function SeatMap({ lang, seatMatrix, seatState, selectedSeat, onSelectSeat, firstClassSeats }: SeatMapProps) {
+export default function SeatMap({ lang, seatMatrix, seatState, selectedSeat, onSelectSeat, firstClassSeats, columns }: SeatMapProps) {
   const t = translations[lang];
   const firstClassRows = Math.ceil(firstClassSeats / 6);
   const totalRows = seatMatrix.length;
@@ -63,7 +64,11 @@ export default function SeatMap({ lang, seatMatrix, seatState, selectedSeat, onS
          ))}
       </div>
 
-      <div className="mx-auto w-full max-w-sm flex flex-col items-center">
+      <div className={`mx-auto w-full transition-all duration-500 flex flex-col items-center ${columns > 6 ? 'max-w-2xl' : 'max-w-sm'}`}>
+        <div className="w-full flex justify-between items-center px-4 mb-2 text-[10px] font-black uppercase tracking-tighter text-slate-500">
+           <span>{translations[lang].availability}: {seatMatrix.length * columns} {translations[lang].seats_sold.split(' ')[0]}</span>
+           <span>{columns === 4 ? '2-2' : columns === 6 ? '3-3' : '3-4-3'} Layout</span>
+        </div>
         {/* Cockpit / Front Service Area (Only in Front section) */}
         {currentSection === 'front' && (
           <div className="w-1/2 h-14 bg-slate-800 rounded-t-[100px] flex flex-col items-center justify-end border-t-[6px] border-slate-700 shadow-inner pb-2 relative overflow-hidden animate-fade-in-down">
@@ -118,7 +123,7 @@ export default function SeatMap({ lang, seatMatrix, seatState, selectedSeat, onS
                       <span className="h-px w-8 bg-slate-700/40" />
                     </div>
                   )}
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className={`grid gap-2 ${columns === 4 ? 'grid-cols-4' : columns === 6 ? 'grid-cols-6' : 'grid-cols-10'}`}>
                     {row.map((seat) => {
                       const state = seatState[seat] ?? 'free';
                       const selectable = isSeatSelectable(state);

@@ -11,6 +11,7 @@ import {
   nodeStatuses,
   purchaseLocations,
   generateSeatMatrixForPlane,
+  getPlaneColumns,
 } from './data';
 import type { BoardingRecord, CustomerStep, SeatStateType, Language } from './types';
 import { canPurchase, canReserve, computeRoutes } from './utils';
@@ -40,6 +41,7 @@ function App() {
   const [passengerName, setPassengerName] = useState('Juanito Pérez');
   const [boardingRecord, setBoardingRecord] = useState<BoardingRecord | null>(null);
   const [sessionReservedSeats, setSessionReservedSeats] = useState<Set<string>>(() => new Set());
+  const [searchId, setSearchId] = useState(0);
 
   const [origin, setOrigin] = useState('ATL');
   const [destination, setDestination] = useState('LON');
@@ -51,18 +53,20 @@ function App() {
 
   const t = translations[lang];
 
-  const routeOptions = useMemo(() => computeRoutes(origin, destination), [origin, destination]);
+  const routeOptions = useMemo(() => computeRoutes(origin, destination), [origin, destination, searchId]);
   const selectedRoute = routeOptions[selectedRouteIndex] ?? null;
   const sessionReservedList = useMemo(() => [...sessionReservedSeats], [sessionReservedSeats]);
 
   // Matrix based on dynamic aircraft capacity
-  const { currentSeatMatrix, firstClassSeats } = useMemo(() => {
-    if (!selectedRoute) return { currentSeatMatrix: generateSeatMatrixForPlane(60), firstClassSeats: 12 };
-    const planeModel = selectedRoute.plane.split(' / ')[0]; // Take first plane in case of layover
+  const { currentSeatMatrix, firstClassSeats, columns } = useMemo(() => {
+    if (!selectedRoute) return { currentSeatMatrix: generateSeatMatrixForPlane(60, 6), firstClassSeats: 12, columns: 6 };
+    const planeModel = selectedRoute.plane.split(' / ')[0];
+    const columns = getPlaneColumns(planeModel);
     const ac = aircrafts.find(a => a.model === planeModel) || aircrafts[0];
     return { 
-      currentSeatMatrix: generateSeatMatrixForPlane(ac.first + ac.economy),
-      firstClassSeats: ac.first
+      currentSeatMatrix: generateSeatMatrixForPlane(ac.first + ac.economy, columns),
+      firstClassSeats: ac.first,
+      columns: columns
     };
   }, [selectedRoute]);
 
@@ -123,6 +127,11 @@ function App() {
       const other = cities.find((c) => c.code !== code);
       if (other) setOrigin(other.code);
     }
+  };
+
+  const handleNewSearch = () => {
+    setSearchId(s => s + 1);
+    resetCustomerFlow();
   };
 
   const handleSubmit = (action: 'reserva' | 'compra') => {
@@ -301,7 +310,8 @@ function App() {
               onSubmit={handleSubmit}
               feedback={feedback}
               boardingRecord={boardingRecord}
-              onNewSearch={resetCustomerFlow}
+              onNewSearch={handleNewSearch}
+              columns={columns}
             />
           ) : (
             <AdminView

@@ -49,6 +49,7 @@ type CustomerViewProps = {
   feedback: { message: string; variant: 'success' | 'error' } | null;
   boardingRecord: BoardingRecord | null;
   onNewSearch: () => void;
+  columns: number;
 };
 
 function runStepTransition(
@@ -154,6 +155,7 @@ export default function CustomerView(props: CustomerViewProps) {
     feedback,
     boardingRecord,
     onNewSearch,
+    columns,
   } = props;
 
   const t = translations[lang];
@@ -339,7 +341,10 @@ export default function CustomerView(props: CustomerViewProps) {
               <button
                 type="button"
                 onClick={() =>
-                  runStepTransition(transitionLock, setStepBusy, t.step_1 + '...', 780, () => setStep(2))
+                  runStepTransition(transitionLock, setStepBusy, t.step_1 + '...', 780, () => {
+                    onNewSearch();
+                    setStep(2);
+                  })
                 }
                 className="rounded-2xl bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:brightness-110 active:scale-[0.98]"
               >
@@ -479,6 +484,9 @@ export default function CustomerView(props: CustomerViewProps) {
                     </div>
                     <p className="mt-3 font-semibold text-white text-lg">
                       {option.path.join(' → ')}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tight mt-1">
+                      {option.plane}
                     </p>
                     <div className="mt-4 flex items-baseline justify-between rounded-xl bg-slate-900/50 p-3 ring-1 ring-white/5">
                       <div className="text-left">
@@ -634,6 +642,7 @@ export default function CustomerView(props: CustomerViewProps) {
                   seatState={seatState}
                   selectedSeat={selectedSeat}
                   onSelectSeat={setSelectedSeat}
+                  columns={columns}
                 />
               </div>
             </div>

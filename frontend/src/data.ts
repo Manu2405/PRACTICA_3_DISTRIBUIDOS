@@ -102,18 +102,25 @@ export const eventLogs: EventLog[] = [
   { time: '19:55', event: 'Consistencia verificada', detail: 'Todas las bases con 96.4% de coincidencia' }
 ];
 
+export function getPlaneColumns(model: string): number {
+  if (model.includes('A380')) return 10;
+  if (model.includes('E195') || model.includes('A318')) return 4;
+  return 6;
+}
+
 /** 
- * Genera una matriz de asientos basada en la capacidad.
- * Suponemos 6 asientos por fila (A, B, C, D, E, F) para simplificar,
- * pero las filas se dividen visualmente en la UI.
+ * Genera una matriz de asientos basada en la capacidad y el número de columnas.
  */
-export function generateSeatMatrixForPlane(totalSeats: number): string[][] {
-  const columns = 6;
+export function generateSeatMatrixForPlane(totalSeats: number, columns: number = 6): string[][] {
   const rows = Math.ceil(totalSeats / columns);
   const matrix: string[][] = [];
+  const chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
   for (let r = 1; r <= rows; r++) {
-    const rowChars = ['A', 'B', 'C', 'D', 'E', 'F'];
-    matrix.push(rowChars.map(c => `${c}${r}`));
+    const rowSeats: string[] = [];
+    for (let c = 0; c < columns; c++) {
+      rowSeats.push(`${chars[c]}${r}`);
+    }
+    matrix.push(rowSeats);
   }
   return matrix;
 }
