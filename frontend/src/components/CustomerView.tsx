@@ -713,7 +713,7 @@ export default function CustomerView(props: CustomerViewProps) {
           <BoardingPassCard 
             lang={lang} 
             record={boardingRecord} 
-            brandName={brand.name} 
+            brandName={t.brand_name} 
             brandShort={brand.shortName} 
             onSimulateScan={handleWalletScan} 
           />
@@ -770,7 +770,7 @@ export default function CustomerView(props: CustomerViewProps) {
             <button
                onClick={() => {
                   setIsWalletModalOpen(false);
-                  if (boardingRecord) downloadWalletDemoJson(boardingRecord);
+                  if (boardingRecord) downloadWalletDemoJson(boardingRecord, lang);
                   setTimeout(() => onNewSearch(), 500);
               }}
               className="w-full rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 px-6 py-3 font-bold transition-colors"

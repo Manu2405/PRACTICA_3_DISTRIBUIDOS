@@ -11,9 +11,14 @@ type BoardingPassCardProps = {
   onSimulateScan?: () => void;
 };
 
-function BarcodeBlock({ value, lang }: { value: string; lang: Language }) {
+function BarcodeBlock({ value, lang, onSimulateScan }: { value: string; lang: Language; onSimulateScan?: () => void }) {
+  const t = translations[lang];
   return (
-    <div className="w-full flex flex-col items-center justify-center p-2 bg-white rounded-xl shadow-inner border border-slate-200">
+    <button
+      type="button"
+      onClick={onSimulateScan}
+      className={`w-full flex flex-col items-center justify-center p-2 bg-white rounded-xl shadow-inner border border-slate-200 transition-all ${onSimulateScan ? 'hover:scale-105 active:scale-95 cursor-pointer ring-1 ring-cyan-500/20 shadow-lg shadow-cyan-500/5' : ''}`}
+    >
       <QRCodeSVG
         value={value}
         size={80}
@@ -23,13 +28,13 @@ function BarcodeBlock({ value, lang }: { value: string; lang: Language }) {
         fgColor="#0f172a"
       />
       <span className="text-[9px] font-bold text-slate-500 mt-1 tracking-widest uppercase">
-        {lang === 'es' ? 'QR Embarque' : lang === 'en' ? 'Boarding QR' : 'QR Embarque'}
+        {t.qr_boarding}
       </span>
-    </div>
+    </button>
   );
 }
 
-export default function BoardingPassCard({ lang, record, brandName, brandShort }: BoardingPassCardProps) {
+export default function BoardingPassCard({ lang, record, brandName, brandShort, onSimulateScan }: BoardingPassCardProps) {
   const t = translations[lang];
   const isSale = record.kind === 'compra';
   const qrValue = boardingPassQrValue(record);
@@ -70,7 +75,7 @@ export default function BoardingPassCard({ lang, record, brandName, brandShort }
                 <p className="text-xl font-bold text-slate-900">{record.passengerName}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{lang === 'es' ? 'Clase' : 'Class'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t.travel_class}</p>
                 <p className="text-xl font-black text-[#0d9488]">{record.travelClass}</p>
               </div>
             </div>
@@ -96,7 +101,7 @@ export default function BoardingPassCard({ lang, record, brandName, brandShort }
 
             <div className="grid grid-cols-4 gap-4 bg-white/60 rounded-xl p-4 border border-slate-200 mt-4 shadow-sm">
               <div>
-                <p className="text-[9px] font-bold uppercase text-slate-500">{lang === 'es' ? 'Fecha' : 'Date'}</p>
+                <p className="text-[9px] font-bold uppercase text-slate-500">{t.flight_date}</p>
                 <p className="text-[14px] leading-tight font-black text-slate-900 uppercase">{record.flightDate}</p>
               </div>
               <div>
@@ -108,7 +113,7 @@ export default function BoardingPassCard({ lang, record, brandName, brandShort }
                 <p className="text-xl font-black text-[#0d9488]">{record.gate}</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase text-slate-500">{lang === 'es' ? 'Asiento' : 'Seat'}</p>
+                <p className="text-[10px] font-bold uppercase text-slate-500">{t.seat}</p>
                 <p className="text-xl font-black text-slate-900">{record.seat}</p>
               </div>
             </div>
@@ -117,10 +122,10 @@ export default function BoardingPassCard({ lang, record, brandName, brandShort }
               <p className="text-[9px] text-slate-500 max-w-[60%] leading-tight">
                 {record.kind === 'compra' ? t.buy_sale : t.reserve} — <span className="font-mono">{record.passport}</span>
                 <br />
-                <span className="text-[8px] opacity-70 uppercase tracking-tighter">{lang === 'es' ? 'Emitido el' : 'Issued at'}: {record.localIssuedAt}</span>
+                <span className="text-[8px] opacity-70 uppercase tracking-tighter">{t.issued_at}: {record.localIssuedAt}</span>
               </p>
               <div className="w-1/3">
-                <BarcodeBlock lang={lang} value={record.flight + record.passengerName + record.seat} />
+                <BarcodeBlock lang={lang} value={record.flight + record.passengerName + record.seat} onSimulateScan={onSimulateScan} />
               </div>
             </div>
           </div>
@@ -146,9 +151,13 @@ export default function BoardingPassCard({ lang, record, brandName, brandShort }
             </div>
 
             <div className="mt-6 flex flex-col items-center gap-2">
-              <div className="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200">
+              <button
+                type="button"
+                onClick={onSimulateScan}
+                className={`bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 transition-all ${onSimulateScan ? 'hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-cyan-500/20 shadow-xl' : ''}`}
+              >
                 <QRCodeSVG value={qrValue} size={110} level="M" />
-              </div>
+              </button>
             </div>
           </div>
         </div>

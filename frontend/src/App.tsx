@@ -29,7 +29,7 @@ function App() {
     refundTimers.current[seatId] = window.setTimeout(() => {
       setLiveSeatState((p) => (p[seatId] === 'refund' ? { ...p, [seatId]: 'free' } : p));
       delete refundTimers.current[seatId];
-    }, 8000);
+    }, 5000);
   };
 
   const [view, setView] = useState<'customer' | 'admin'>('customer');
@@ -208,10 +208,14 @@ function App() {
   };
 
   const handleCancelPurchase = (seatId: string) => {
-    setLiveSeatState((prev) => ({ ...prev, [seatId]: 'free' }));
+    setLiveSeatState((prev) => ({ ...prev, [seatId]: 'refund' }));
     setBoardingRecord(null);
     setCustomerStep(1);
-    showFeedback(lang === 'es' ? 'Compra anulada con éxito.' : 'Purchase successfully cancelled.', 'success');
+    scheduleRefundToFree(seatId);
+    showFeedback(
+      lang === 'es' ? 'Compra anulada. Sincronizando con la red...' : 'Purchase cancelled. Syncing with network...',
+      'success',
+    );
   };
 
   return (
@@ -219,7 +223,7 @@ function App() {
       <div className="app-shell-inner min-h-screen px-4 py-8 text-slate-100 sm:px-6">
         <div className="mx-auto max-w-7xl space-y-8">
           <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <BrandMark name={BRAND.name} shortName={BRAND.shortName} iconSrc={BRAND.iconImage} />
+            <BrandMark name={t.brand_name} tagline={t.brand_tagline} shortName={BRAND.shortName} iconSrc={BRAND.iconImage} />
             
             <div className="flex flex-wrap items-center gap-4">
                {/* Language Toggle */}
@@ -245,7 +249,7 @@ function App() {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {lang === 'es' ? 'Cliente' : lang === 'en' ? 'Customer' : 'Cliente'}
+                  {t.customer}
                 </button>
                 <button
                   type="button"
@@ -256,7 +260,7 @@ function App() {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {lang === 'es' ? 'Administración' : lang === 'en' ? 'Admin' : 'Administração'}
+                  {t.admin}
                 </button>
               </div>
             </div>
@@ -307,7 +311,7 @@ function App() {
               eventLogs={eventLogs}
               aircrafts={aircrafts}
               brandShort={BRAND.shortName}
-              brandName={BRAND.name}
+              brandName={t.brand_name}
             />
           )}
         </div>
@@ -321,9 +325,9 @@ function App() {
                 <path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">{t.reserve}!</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">{t.reserved}!</h3>
             <p className="text-slate-400 text-sm mb-8">
-              {lang === 'es' ? 'Tu asiento ha sido reservado con éxito.' : 'Your seat has been successfully reserved.'}
+              {lang === 'es' ? 'Tu asiento ha sido reservado con éxito.' : lang === 'en' ? 'Your seat has been successfully reserved.' : 'Seu assento foi reservado com sucesso.'}
             </p>
             <button
               onClick={() => setShowReserveModal(false)}

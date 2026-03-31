@@ -53,7 +53,7 @@ function ClusterNode({ node, index, total, t, lang }: { node: NodeStatus; index:
       <div className="relative w-20 h-20 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl flex flex-col items-center justify-center gap-1 group-hover:scale-110 group-hover:border-cyan-500/50 transition-all z-10 hover:z-20">
          <div className={`w-3 h-3 rounded-full ${node.status === 'Online' || node.status === 'Sincronizado' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-rose-500'} animate-pulse`} />
          <div className="bg-slate-950/40 px-2 py-0.5 rounded-md backdrop-blur-sm border border-white/5">
-            <span className="text-[10px] font-black text-white uppercase tracking-tighter truncate max-w-[64px] block text-center leading-tight">{node.node}</span>
+            <span className="text-[10px] font-black text-white uppercase tracking-tighter truncate max-w-[64px] block text-center leading-tight">{node.node.replace('Nodo', t.node)}</span>
          </div>
          
          {/* Hover Tooltip/Stats */}

@@ -2,12 +2,13 @@ import { useState } from 'react';
 
 type BrandMarkProps = {
   name: string;
+  tagline: string;
   shortName: string;
   /** Ruta pública, ej. `/image.png` en `public/` */
   iconSrc?: string;
 };
 
-export default function BrandMark({ name, shortName, iconSrc }: BrandMarkProps) {
+export default function BrandMark({ name, tagline, shortName, iconSrc }: BrandMarkProps) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = Boolean(iconSrc) && !imgFailed;
 
@@ -35,7 +36,7 @@ export default function BrandMark({ name, shortName, iconSrc }: BrandMarkProps) 
       </div>
       <div>
         <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">{name}</h1>
-        <p className="mt-1 text-sm text-teal-200/80">{shortName} · viajes</p>
+        <p className="mt-1 text-sm text-teal-200/80">{shortName} · {tagline}</p>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import type { BoardingRecord } from './types';
+import type { BoardingRecord, Language } from './types';
+import { translations } from './i18n';
 
 /**
  * Payload del QR del pase y el campo `barcode.value` del JSON Wallet.
@@ -31,7 +32,8 @@ export function boardingPassQrValue(record: BoardingRecord): string {
  * En producción: el backend crea un JWT firmado y devuelve el enlace o usa la API REST.
  * @see https://developers.google.com/wallet/tickets/boarding-passes/rest
  */
-export function buildGoogleWalletFlightDemoPayload(record: BoardingRecord) {
+export function buildGoogleWalletFlightDemoPayload(record: BoardingRecord, lang: Language) {
+  const t = translations[lang];
   const qrValue = boardingPassQrValue(record);
 
   return {
@@ -68,17 +70,17 @@ export function buildGoogleWalletFlightDemoPayload(record: BoardingRecord) {
         alternateText: record.passport,
       },
       textModulesData: [
-        { header: 'DOCUMENTO', body: record.passport, id: 'passport' },
-        { header: 'CLASE', body: record.travelClass, id: 'class' },
-        { header: 'SALIDA', body: record.departure, id: 'dep' },
-        { header: 'LLEGADA', body: record.arrival, id: 'arr' },
+        { header: t.document, body: record.passport, id: 'passport' },
+        { header: t.class_label, body: record.travelClass, id: 'class' },
+        { header: t.departure, body: record.departure, id: 'dep' },
+        { header: t.arrival, body: record.arrival, id: 'arr' },
       ],
     },
   };
 }
 
-export function downloadWalletDemoJson(record: BoardingRecord): void {
-  const payload = buildGoogleWalletFlightDemoPayload(record);
+export function downloadWalletDemoJson(record: BoardingRecord, lang: Language): void {
+  const payload = buildGoogleWalletFlightDemoPayload(record, lang);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
