@@ -1,10 +1,29 @@
-// src/vuelos/dto/create-vuelo.dto.ts
+import { Type } from 'class-transformer';
+import { IsInt, IsNumber, IsString } from 'class-validator';
+
 export class CreateVueloDto {
+  @IsString()
   numeroVuelo!: string;
+
+  @Type(() => Number)
+  @IsInt()
   origenId!: number;
+
+  @Type(() => Number)
+  @IsInt()
   destinoId!: number;
+
+  @Type(() => Number)
+  @IsInt()
   aeronaveId!: number;
-  salidaUtc!: string;   // ISO 8601 con timezone
+
+  @IsString()
+  salidaUtc!: string;
+
+  @IsString()
   llegadaUtc!: string;
+
+  @Type(() => Number)
+  @IsNumber()
   precioBaseUsd!: number;
 }

@@ -6,8 +6,24 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const dijkstra = require('dijkstrajs') as {
   find_path: (graph: object, from: string, to: string) => string[];
-  distance: (graph: object, from: string, to: string) => number;
 };
+
+function distanciaDelCamino(
+  graph: Record<string, Record<string, number>>,
+  path: string[],
+): number {
+  let total = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i];
+    const b = path[i + 1];
+    const w = graph[a]?.[b];
+    if (w === undefined) {
+      throw new Error(`Arista inválida en el camino: ${a} → ${b}`);
+    }
+    total += w;
+  }
+  return total;
+}
 
 // Grafo de ejemplo — el módulo de Algoritmia lo reemplazará con datos reales de BD
 const GRAPH: Record<string, Record<string, number>> = {
@@ -33,7 +49,7 @@ export class AppService {
       }
 
       const path = dijkstra.find_path(this.graph, from, to);
-      const distance = dijkstra.distance(this.graph, from, to);
+      const distance = distanciaDelCamino(this.graph, path);
 
       return {
         ok: true,
