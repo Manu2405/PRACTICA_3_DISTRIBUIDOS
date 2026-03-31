@@ -1,5 +1,7 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Res } from '@nestjs/common';
 import { AppService } from './app.service';
+import { DijkstraService } from './dijkstra/dijkstra.service';
+import { ConflictResolverService, BookingEvent } from './conflict-resolver/conflict-resolver.service';
 import { Response } from 'express';
 
 @Controller()
@@ -7,14 +9,58 @@ export class AppController {
   // Memoria efímera para saber si un ticket ya fue escaneado
   private scannedTickets = new Map<string, boolean>();
 
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly dijkstraService: DijkstraService,
+    private readonly conflictResolverService: ConflictResolverService
+  ) {}
 
   @Get('shortest-path')
   getShortestPath(
-    @Query('from') from = 'A',
-    @Query('to') to = 'F'
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('criteria') criteria: 'price' | 'time' = 'price'
   ) {
-    return this.appService.computeShortestPath(from, to);
+    if (!from || !to) {
+      return { error: 'Faltan parámetros origin o destination' };
+    }
+    try {
+      return this.dijkstraService.findOptimalRoute(from.toUpperCase(), to.toUpperCase(), criteria);
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  }
+
+  // --- Endpoints para resolver conflictos ---
+
+  @Post('simulate-conflict')
+  simulateConflict(@Body() body: { event1: BookingEvent; event2: BookingEvent }) {
+    if (!body.event1 || !body.event2) {
+      return { error: 'Se requieren event1 y event2 en el body' };
+    }
+    return this.conflictResolverService.simulateConflict(body.event1, body.event2);
+  }
+
+  @Get('simulate-conflict-demo')
+  simulateConflictDemo() {
+    // Escenario de prueba por defecto interactivo sin necesitar Body POST
+    const eventA: BookingEvent = {
+      eventId: 'evt-101',
+      nodeId: 'node-2',
+      seatId: 'A1',
+      action: 'reserve',
+      vectorClock: { 'node-1': 2, 'node-2': 5, 'node-3': 1 }
+    };
+
+    const eventB: BookingEvent = {
+      eventId: 'evt-102',
+      nodeId: 'node-1',
+      seatId: 'A1',
+      action: 'purchase', // Venta gana sobre reserva
+      vectorClock: { 'node-1': 3, 'node-2': 4, 'node-3': 1 } // Son concurrentes pues ni A < B ni B < A estrictamente
+    };
+
+    return this.conflictResolverService.simulateConflict(eventA, eventB);
   }
 
   // --- Endpoints para la funcionalidad de Scanner Dinámico Distribuido ---
