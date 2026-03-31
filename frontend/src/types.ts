@@ -8,6 +8,10 @@ export type City = {
   lng: number;
 };
 
+export type FlightStatus = 'On Time' | 'Boarding' | 'En Route' | 'Arrived';
+
+export type Language = 'es' | 'en' | 'pt';
+
 export type RouteOffer = {
   path: string[];
   type: 'Directa' | 'Escala';
@@ -20,6 +24,7 @@ export type RouteOffer = {
   gate: string;
   departure: string;
   arrival: string;
+  status?: FlightStatus;
 };
 
 export type NodeStatus = {
@@ -83,5 +88,7 @@ export type BoardingRecord = {
   gate: string;
   travelClass: string;
   localIssuedAt: string;
+  flightDate: string;
+  issuedAtISO: string; // ISO date for time-based logic like cancellation window
   purchaseLocationLabel?: string;
 };

@@ -10,10 +10,11 @@ import {
   mockPassengers,
   nodeStatuses,
   purchaseLocations,
-  seatMatrix,
+  generateSeatMatrixForPlane,
 } from './data';
-import type { BoardingRecord, CustomerStep, SeatStateType } from './types';
+import type { BoardingRecord, CustomerStep, SeatStateType, Language } from './types';
 import { canPurchase, canReserve, computeRoutes } from './utils';
+import { translations } from './i18n';
 import CustomerView from './components/CustomerView';
 import AdminView from './components/AdminView';
 import BrandMark from './components/BrandMark';
@@ -32,10 +33,11 @@ function App() {
   };
 
   const [view, setView] = useState<'customer' | 'admin'>('customer');
+  const [lang, setLang] = useState<Language>('es');
   const [customerStep, setCustomerStep] = useState<CustomerStep>(1);
   const [purchaseLocation, setPurchaseLocation] = useState<string>(purchaseLocations[0].code);
-  const [passport, setPassport] = useState('');
-  const [passengerName, setPassengerName] = useState('');
+  const [passport, setPassport] = useState('42152');
+  const [passengerName, setPassengerName] = useState('Juanito Pérez');
   const [boardingRecord, setBoardingRecord] = useState<BoardingRecord | null>(null);
   const [sessionReservedSeats, setSessionReservedSeats] = useState<Set<string>>(() => new Set());
 
@@ -47,9 +49,22 @@ function App() {
   const [feedback, setFeedback] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
   const [showReserveModal, setShowReserveModal] = useState(false);
 
+  const t = translations[lang];
+
   const routeOptions = useMemo(() => computeRoutes(origin, destination), [origin, destination]);
   const selectedRoute = routeOptions[selectedRouteIndex] ?? null;
   const sessionReservedList = useMemo(() => [...sessionReservedSeats], [sessionReservedSeats]);
+
+  // Matrix based on dynamic aircraft capacity
+  const { currentSeatMatrix, firstClassSeats } = useMemo(() => {
+    if (!selectedRoute) return { currentSeatMatrix: generateSeatMatrixForPlane(60), firstClassSeats: 12 };
+    const planeModel = selectedRoute.plane.split(' / ')[0]; // Take first plane in case of layover
+    const ac = aircrafts.find(a => a.model === planeModel) || aircrafts[0];
+    return { 
+      currentSeatMatrix: generateSeatMatrixForPlane(ac.first + ac.economy),
+      firstClassSeats: ac.first
+    };
+  }, [selectedRoute]);
 
   useEffect(() => {
     setSelectedRouteIndex((idx) => {
@@ -71,7 +86,7 @@ function App() {
 
   const showFeedback = (message: string, variant: 'success' | 'error') => {
     setFeedback({ message, variant });
-    window.setTimeout(() => setFeedback(null), variant === 'error' ? 5500 : 6500);
+    window.setTimeout(() => setFeedback(null), variant === 'error' ? 5500 : 7500);
   };
 
   const resetCustomerFlow = () => {
@@ -112,32 +127,29 @@ function App() {
 
   const handleSubmit = (action: 'reserva' | 'compra') => {
     if (origin === destination) {
-      showFeedback('Elige origen y destino distintos.', 'error');
+      showFeedback(lang === 'es' ? 'Elige origen y destino distintos.' : 'Choose different origin and destination.', 'error');
       return;
     }
     if (!selectedRoute) {
-      showFeedback('No hay ruta disponible.', 'error');
+      showFeedback(lang === 'es' ? 'No hay ruta disponible.' : 'No route available.', 'error');
       return;
     }
     if (!selectedSeat) {
-      showFeedback('Selecciona un asiento libre (índigo) o, para comprar, uno en reserva tuya.', 'error');
+      showFeedback(lang === 'es' ? 'Selecciona un asiento libre o tu reserva.' : 'Select a free seat or your reservation.', 'error');
       return;
     }
     if (!passport.trim() || !passengerName.trim()) {
-      showFeedback('Completa pasaporte y nombre del pasajero.', 'error');
+      showFeedback(lang === 'es' ? 'Completa pasaporte y nombre.' : 'Complete passport and name.', 'error');
       return;
     }
 
     const seat = selectedSeat;
     const st = liveSeatState[seat] ?? 'free';
-    if (action === 'reserva' && !canReserve(st)) {
-      showFeedback('Solo puedes reservar en estado Libre.', 'error');
-      return;
-    }
-    if (action === 'compra' && !canPurchase(st)) {
-      showFeedback('Compra no disponible: elige Libre o tu Reserva (amarillo).', 'error');
-      return;
-    }
+    if (action === 'reserva' && !canReserve(st)) return;
+    if (action === 'compra' && !canPurchase(st)) return;
+
+    const now = new Date();
+
     if (action === 'reserva' && st === 'free') {
       setLiveSeatState((prev) => ({ ...prev, [seat]: 'reserved' }));
       setSessionReservedSeats((prev) => new Set(prev).add(seat));
@@ -168,7 +180,9 @@ function App() {
       arrival: selectedRoute.arrival,
       gate: selectedRoute.gate,
       travelClass: action === 'compra' ? 'Y' : 'R',
-      localIssuedAt: new Date().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'medium' }),
+      localIssuedAt: now.toLocaleString(lang === 'es' ? 'es-ES' : 'en-US', { dateStyle: 'medium', timeStyle: 'medium' }),
+      flightDate: now.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
+      issuedAtISO: now.toISOString(),
       purchaseLocationLabel,
     };
     setBoardingRecord(record);
@@ -190,7 +204,14 @@ function App() {
     });
     scheduleRefundToFree(seat);
     setSelectedSeat(null);
-    showFeedback('Reserva anulada: estado Devolución (rojo). Volverá a Libre tras proceso simulado (~8 s).', 'success');
+    showFeedback(lang === 'es' ? 'Reserva anulada' : 'Reservation cancelled', 'success');
+  };
+
+  const handleCancelPurchase = (seatId: string) => {
+    setLiveSeatState((prev) => ({ ...prev, [seatId]: 'free' }));
+    setBoardingRecord(null);
+    setCustomerStep(1);
+    showFeedback(lang === 'es' ? 'Compra anulada con éxito.' : 'Purchase successfully cancelled.', 'success');
   };
 
   return (
@@ -199,34 +220,51 @@ function App() {
         <div className="mx-auto max-w-7xl space-y-8">
           <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <BrandMark name={BRAND.name} shortName={BRAND.shortName} iconSrc={BRAND.iconImage} />
-            <div className="inline-flex rounded-3xl border border-white/10 bg-slate-900/80 p-1.5 shadow-xl backdrop-blur-md">
-              <button
-                type="button"
-                onClick={() => setView('customer')}
-                className={`rounded-2xl px-6 py-3 text-sm font-bold transition-all ${
-                  view === 'customer'
-                    ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Cliente
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('admin')}
-                className={`rounded-2xl px-6 py-3 text-sm font-bold transition-all ${
-                  view === 'admin'
-                    ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Administración
-              </button>
+            
+            <div className="flex flex-wrap items-center gap-4">
+               {/* Language Toggle */}
+              <div className="inline-flex rounded-2xl border border-white/10 bg-slate-900/60 p-1">
+                {(['es', 'en', 'pt'] as Language[]).map(l => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold uppercase transition-all ${lang === l ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              <div className="inline-flex rounded-3xl border border-white/10 bg-slate-900/80 p-1.5 shadow-xl backdrop-blur-md">
+                <button
+                  type="button"
+                  onClick={() => setView('customer')}
+                  className={`rounded-2xl px-6 py-3 text-sm font-bold transition-all ${
+                    view === 'customer'
+                      ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {lang === 'es' ? 'Cliente' : lang === 'en' ? 'Customer' : 'Cliente'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('admin')}
+                  className={`rounded-2xl px-6 py-3 text-sm font-bold transition-all ${
+                    view === 'admin'
+                      ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {lang === 'es' ? 'Administración' : lang === 'en' ? 'Admin' : 'Administração'}
+                </button>
+              </div>
             </div>
           </header>
 
           {view === 'customer' ? (
             <CustomerView
+              lang={lang}
               brand={BRAND}
               cities={cities}
               purchaseLocations={purchaseLocations}
@@ -244,7 +282,8 @@ function App() {
               selectedRouteIndex={selectedRouteIndex}
               setSelectedRouteIndex={setSelectedRouteIndex}
               selectedRoute={selectedRoute}
-              seatMatrix={seatMatrix}
+              seatMatrix={currentSeatMatrix}
+              firstClassSeats={firstClassSeats}
               seatState={liveSeatState}
               selectedSeat={selectedSeat}
               setSelectedSeat={setSelectedSeat}
@@ -254,6 +293,7 @@ function App() {
               setPassengerName={setPassengerName}
               sessionReservedSeats={sessionReservedList}
               onCancelReservation={handleCancelReservation}
+              onCancelPurchase={handleCancelPurchase}
               onSubmit={handleSubmit}
               feedback={feedback}
               boardingRecord={boardingRecord}
@@ -261,6 +301,7 @@ function App() {
             />
           ) : (
             <AdminView
+              lang={lang}
               nodeStatuses={nodeStatuses}
               conflicts={conflicts}
               eventLogs={eventLogs}
@@ -280,15 +321,15 @@ function App() {
                 <path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">¡Asiento Reservado!</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">{t.reserve}!</h3>
             <p className="text-slate-400 text-sm mb-8">
-              Tu asiento ha sido reservado con éxito. Si no lo compras, la reserva expirará pronto.
+              {lang === 'es' ? 'Tu asiento ha sido reservado con éxito.' : 'Your seat has been successfully reserved.'}
             </p>
             <button
               onClick={() => setShowReserveModal(false)}
               className="w-full rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-6 py-3 font-bold transition-colors"
             >
-              Continuar
+              {lang === 'es' ? 'Continuar' : 'Continue'}
             </button>
           </div>
         </div>

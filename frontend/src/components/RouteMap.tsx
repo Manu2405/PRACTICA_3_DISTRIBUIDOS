@@ -9,6 +9,8 @@ type RouteMapProps = {
   destination: string;
   selectedRoute: RouteOffer | null;
   className?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 };
 
 function nodeClasses(code: string, path: string[] | undefined, origin: string, destination: string): string {
@@ -58,7 +60,7 @@ function MapOverlay({ cities, origin, destination, path }: { cities: City[], ori
       }).filter(Boolean) as [number, number][];
 
       if (coords.length > 0) {
-        map.fitBounds(coords, { padding: [60, 60], animate: true, maxZoom: 5 });
+        map.fitBounds(coords, { padding: [60, 60], animate: true, maxZoom: 6 });
       }
     } else {
       map.setView([20, 0], window.innerWidth < 600 ? 1 : 2);
@@ -70,7 +72,7 @@ function MapOverlay({ cities, origin, destination, path }: { cities: City[], ori
       const pt = map.latLngToContainerPoint([city.lat, city.lng]);
       return { ...city, px: pt.x, py: pt.y };
     });
-  }, [map, cities, tick]); // dependencies track map movement through tick
+  }, [map, cities, tick]);
 
   const motionPathD = useMemo(() => {
     if (!path?.length) return '';
@@ -108,9 +110,9 @@ function MapOverlay({ cities, origin, destination, path }: { cities: City[], ori
     const labelMuted = !path?.includes(city.code);
     const label =
       city.code === origin
-        ? `${city.code} · origen`
+        ? `${city.code}`
         : city.code === destination
-          ? `${city.code} · destino`
+          ? `${city.code}`
           : city.code;
 
     // Solo dibujar si está en el viewport para evitar bugs de DOM
@@ -153,7 +155,6 @@ function MapOverlay({ cities, origin, destination, path }: { cities: City[], ori
               <animateMotion dur="12s" repeatCount="indefinite" rotate="auto">
                 <mpath href={`#${pathId}`} />
               </animateMotion>
-              {/* Avión ajustado visualmente usando un offset simple y con path de avión real o triángulo */}
               <g transform="translate(-8,-6) scale(2)">
                 <path
                   d="M4.6 1.7L4.6 2.5L2 4L2 4.7L4.6 3.9L4.6 5.8L3.5 6.5L3.5 7L4.9 6.7L5 6.7L6.4 7L6.4 6.5L5.3 5.8L5.3 3.9L7.9 4.7L7.9 4L5.3 2.5L5.3 1.7C5.3 1.3 5 1 4.6 1.7Z"
@@ -178,27 +179,26 @@ export default function RouteMap({
   destination,
   selectedRoute,
   className = '',
+  isExpanded = false,
 }: RouteMapProps) {
   const path = selectedRoute?.path;
 
-  // React-Leaflet base (interactive props off to ensure absolute stability)
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-3xl bg-slate-950 p-0 shadow-inner ring-1 ring-cyan-500/10 flex items-center justify-center aspect-[2/1] sm:aspect-[2.5/1] ${className}`}
+      className={`relative w-full overflow-hidden rounded-3xl bg-slate-950 p-0 shadow-inner ring-1 ring-cyan-500/10 flex items-center justify-center ${isExpanded ? 'h-full aspect-auto' : 'aspect-[2/1] sm:aspect-[2.5/1]'} ${className}`}
     >
       <MapContainer
         center={[20, 0]}
         zoom={2}
-        zoomControl={false}
-        dragging={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
+        zoomControl={isExpanded}
+        dragging={isExpanded}
+        scrollWheelZoom={isExpanded}
+        doubleClickZoom={isExpanded}
         attributionControl={false}
         className="absolute inset-0 w-full h-full z-0"
-        style={{ background: '#020617' }} // slate-950
+        style={{ background: '#020617' }}
       >
         <TileLayer
-          // Positron o Dark Matter desde CartoDB para un look moderno / tecnológico
           url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
         />
         <MapOverlay cities={cities} origin={origin} destination={destination} path={path} />
