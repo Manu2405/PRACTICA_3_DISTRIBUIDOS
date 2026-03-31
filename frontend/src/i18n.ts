@@ -130,6 +130,8 @@ export const translations = {
     issued_at: 'Emitido el',
     document: 'DOCUMENTO',
     class_label: 'CLASE',
+    local_time_point: 'Hora Local del Punto de Venta',
+    timezone_label: 'Zona Horaria',
   },
   en: {
     brand_console: 'console',
@@ -260,6 +262,8 @@ export const translations = {
     issued_at: 'Issued at',
     document: 'DOCUMENT',
     class_label: 'CLASS',
+    local_time_point: 'Point of Sale Local Time',
+    timezone_label: 'Timezone',
   },
   pt: {
     brand_console: 'console',
@@ -390,7 +394,9 @@ export const translations = {
     issued_at: 'Emitido em',
     document: 'DOCUMENTO',
     class_label: 'CLASSE',
-  }
+    local_time_point: 'Hora Local do Ponto de Venda',
+    timezone_label: 'Fuso Horário',
+  },
 };
 
 export function getStatusLabel(status: FlightStatus | undefined, lang: Language): string {

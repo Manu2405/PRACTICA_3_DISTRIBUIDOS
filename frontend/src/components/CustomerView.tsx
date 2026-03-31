@@ -159,9 +159,15 @@ export default function CustomerView(props: CustomerViewProps) {
   } = props;
 
   const t = translations[lang];
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const originCities = cities.filter((c) => c.code !== destination);
   const destCities = cities.filter((c) => c.code !== origin);
-  const now = new Date();
   const oCity = cities.find((c) => c.code === origin);
   const dCity = cities.find((c) => c.code === destination);
   const tzO = oCity ? cityTimezones[oCity.code] : undefined;
@@ -295,17 +301,36 @@ export default function CustomerView(props: CustomerViewProps) {
             <h2 className="text-xl font-bold text-white">1. {t.origin}, {t.destination}</h2>
             <label className="mt-6 block text-sm font-medium text-slate-300">
               {t.buy_from}
-              <select
-                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30"
-                value={purchaseLocation}
-                onChange={(e) => setPurchaseLocation(e.target.value)}
-              >
-                {purchaseLocations.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative mt-2">
+                <select
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30"
+                  value={purchaseLocation}
+                  onChange={(e) => setPurchaseLocation(e.target.value)}
+                >
+                  {purchaseLocations.map((p) => (
+                    <option key={p.code} value={p.code}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-800/40 p-3 ring-1 ring-white/5">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 leading-none mb-1">{t.local_time_point}</p>
+                      <p className="text-sm font-bold text-slate-200">
+                        {formatTimeInTz(now, cityTimezones[purchaseLocation])}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 leading-none mb-1">{t.timezone_label}</p>
+                    <p className="text-[10px] font-mono text-cyan-400/80">{cityTimezones[purchaseLocation] || 'UTC'}</p>
+                  </div>
+                </div>
+              </div>
             </label>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-slate-300">
