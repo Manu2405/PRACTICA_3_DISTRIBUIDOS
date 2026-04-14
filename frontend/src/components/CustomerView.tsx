@@ -43,6 +43,7 @@ type CustomerViewProps = {
   passengerName: string;
   setPassengerName: (s: string) => void;
   sessionReservedSeats: string[];
+  reserveTimestamps: Record<string, number>;
   onCancelReservation: () => void;
   onCancelPurchase: (seatId: string) => void;
   onSubmit: (action: 'reserva' | 'compra') => void;
@@ -149,6 +150,7 @@ export default function CustomerView(props: CustomerViewProps) {
     passengerName,
     setPassengerName,
     sessionReservedSeats,
+    reserveTimestamps,
     onCancelReservation,
     onCancelPurchase,
     onSubmit,
@@ -175,7 +177,10 @@ export default function CustomerView(props: CustomerViewProps) {
 
   const seatSt = selectedSeat ? seatState[selectedSeat] : undefined;
   const reserveEnabled = step >= 4 && Boolean(selectedSeat) && canReserve(seatSt);
-  const purchaseEnabled = step >= 4 && Boolean(selectedSeat) && canPurchase(seatSt);
+  const purchaseEnabled = step >= 4 && (
+    (Boolean(selectedSeat) && canPurchase(seatSt)) ||
+    (sessionReservedSeats.length > 0)
+  );
   const canCancelSession =
     selectedSeat != null &&
     sessionReservedSeats.includes(selectedSeat) &&
@@ -718,8 +723,26 @@ export default function CustomerView(props: CustomerViewProps) {
                 {selectedRoute.flight} · {origin} → {destination}
               </p>
               <p className="mt-2 text-sm text-slate-400">
-                Asiento: <strong className="text-white">{selectedSeat ?? '—'}</strong>
+                Asiento seleccionado: <strong className="text-white">{selectedSeat ?? '—'}</strong>
               </p>
+              {sessionReservedSeats.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t.reservations}</p>
+                  {sessionReservedSeats.map(rSeat => {
+                    const stamp = reserveTimestamps[rSeat];
+                    const timeLeft = stamp ? Math.max(0, Math.ceil((60000 - (now.getTime() - stamp)) / 1000)) : 0;
+                    return (
+                      <div key={rSeat} className="flex justify-between items-center text-sm bg-slate-800/80 p-3 rounded-xl border border-white/5">
+                        <span className="text-slate-300 font-medium">Asiento <strong className="text-white text-lg">{rSeat}</strong></span>
+                        <div className="flex items-center gap-1.5 bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/20">
+                           <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse" />
+                           <span className="text-yellow-400 font-mono font-bold tracking-widest">{timeLeft}s</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <button
                 type="button"
                 disabled={!reserveEnabled || !passport.trim() || !passengerName.trim()}

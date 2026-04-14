@@ -50,6 +50,7 @@ function App() {
   const [liveSeatState, setLiveSeatState] = useState<Record<string, SeatStateType>>(initialSeatState);
   const [feedback, setFeedback] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
   const [showReserveModal, setShowReserveModal] = useState(false);
+  const [reserveTimestamps, setReserveTimestamps] = useState<Record<string, number>>({});
 
   const t = translations[lang];
 
@@ -82,7 +83,39 @@ function App() {
     Object.entries(init)
       .filter(([, s]) => s === 'refund')
       .forEach(([id]) => scheduleRefundToFree(id));
+      
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setReserveTimestamps(prev => {
+        const expiredSeats: string[] = [];
+        for (const seat in prev) {
+          if (now - prev[seat] >= 60000) {
+            expiredSeats.push(seat);
+          }
+        }
+        if (expiredSeats.length > 0) {
+          const next = { ...prev };
+          expiredSeats.forEach(s => delete next[s]);
+          setLiveSeatState(liveState => {
+            const nextState = { ...liveState };
+            expiredSeats.forEach(s => {
+              if (nextState[s] === 'reserved') nextState[s] = 'free';
+            });
+            return nextState;
+          });
+          setSessionReservedSeats(set => {
+            const nextSet = new Set(set);
+            expiredSeats.forEach(s => nextSet.delete(s));
+            return nextSet;
+          });
+          return next;
+        }
+        return prev;
+      });
+    }, 1000);
+
     return () => {
+      clearInterval(interval);
       Object.values(refundTimers.current).forEach((t) => window.clearTimeout(t));
       refundTimers.current = {};
     };
@@ -143,8 +176,12 @@ function App() {
       showFeedback(lang === 'es' ? 'No hay ruta disponible.' : 'No route available.', 'error');
       return;
     }
-    if (!selectedSeat) {
+    if (!selectedSeat && sessionReservedList.length === 0) {
       showFeedback(lang === 'es' ? 'Selecciona un asiento libre o tu reserva.' : 'Select a free seat or your reservation.', 'error');
+      return;
+    }
+    if (action === 'reserva' && !selectedSeat) {
+      showFeedback(lang === 'es' ? 'Selecciona un asiento libre.' : 'Select a free seat.', 'error');
       return;
     }
     if (!passport.trim() || !passengerName.trim()) {
@@ -153,23 +190,32 @@ function App() {
     }
 
     const seat = selectedSeat;
-    const st = liveSeatState[seat] ?? 'free';
+    const st = seat ? (liveSeatState[seat] ?? 'free') : 'reserved';
     if (action === 'reserva' && !canReserve(st)) return;
-    if (action === 'compra' && !canPurchase(st)) return;
+    if (action === 'compra' && seat && !canPurchase(st)) return;
 
     const now = new Date();
 
-    if (action === 'reserva' && st === 'free') {
+    if (action === 'reserva' && seat && st === 'free') {
       setLiveSeatState((prev) => ({ ...prev, [seat]: 'reserved' }));
       setSessionReservedSeats((prev) => new Set(prev).add(seat));
+      setReserveTimestamps((prev) => ({ ...prev, [seat]: Date.now() }));
       setShowReserveModal(true);
       return;
     }
+    
+    let allSeatsToBuy: string[] = [];
     if (action === 'compra') {
-      setLiveSeatState((prev) => ({ ...prev, [seat]: 'sold' }));
-      setSessionReservedSeats((prev) => {
-        const next = new Set(prev);
-        next.delete(seat);
+      allSeatsToBuy = Array.from(new Set([...sessionReservedList, ...(seat ? [seat] : [])]));
+      setLiveSeatState((prev) => {
+        const next = { ...prev };
+        allSeatsToBuy.forEach(s => next[s] = 'sold');
+        return next;
+      });
+      setSessionReservedSeats(new Set());
+      setReserveTimestamps((prev) => {
+        const next = { ...prev };
+        allSeatsToBuy.forEach(s => delete next[s]);
         return next;
       });
     }
@@ -179,7 +225,7 @@ function App() {
       kind: action === 'compra' ? 'compra' : 'reserva',
       passengerName: passengerName.trim(),
       passport: passport.trim(),
-      seat,
+      seat: action === 'compra' ? allSeatsToBuy.join(', ') : (seat || ''),
       flight: selectedRoute.flight,
       origin,
       destination,
@@ -209,6 +255,11 @@ function App() {
     setSessionReservedSeats((prev) => {
       const next = new Set(prev);
       next.delete(seat);
+      return next;
+    });
+    setReserveTimestamps((prev) => {
+      const next = { ...prev };
+      delete next[seat];
       return next;
     });
     scheduleRefundToFree(seat);
@@ -305,6 +356,7 @@ function App() {
               passengerName={passengerName}
               setPassengerName={setPassengerName}
               sessionReservedSeats={sessionReservedList}
+              reserveTimestamps={reserveTimestamps}
               onCancelReservation={handleCancelReservation}
               onCancelPurchase={handleCancelPurchase}
               onSubmit={handleSubmit}
