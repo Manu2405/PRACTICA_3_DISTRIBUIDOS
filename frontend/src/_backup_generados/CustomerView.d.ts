@@ -1,0 +1,51 @@
+import type { BoardingRecord, City, CustomerStep, RouteOffer, SeatStateType, Language } from '../types';
+type Brand = {
+    name: string;
+    shortName: string;
+};
+type PurchaseLoc = {
+    code: string;
+    label: string;
+};
+type CustomerViewProps = {
+    lang: Language;
+    brand: Brand;
+    cities: City[];
+    purchaseLocations: readonly PurchaseLoc[];
+    cityTimezones: Record<string, string>;
+    mockPassengers: Record<string, string>;
+    step: CustomerStep;
+    setStep: (s: CustomerStep) => void;
+    purchaseLocation: string;
+    setPurchaseLocation: (c: string) => void;
+    origin: string;
+    destination: string;
+    setOrigin: (code: string) => void;
+    setDestination: (code: string) => void;
+    routeOptions: RouteOffer[];
+    selectedRouteIndex: number;
+    setSelectedRouteIndex: (i: number) => void;
+    selectedRoute: RouteOffer | null;
+    seatMatrix: string[][];
+    firstClassSeats: number;
+    seatState: Record<string, SeatStateType>;
+    selectedSeat: string | null;
+    setSelectedSeat: (s: string | null) => void;
+    passport: string;
+    setPassport: (s: string) => void;
+    passengerName: string;
+    setPassengerName: (s: string) => void;
+    sessionReservedSeats: string[];
+    onCancelReservation: () => void;
+    onCancelPurchase: (seatId: string) => void;
+    onSubmit: (action: 'reserva' | 'compra') => void;
+    feedback: {
+        message: string;
+        variant: 'success' | 'error';
+    } | null;
+    boardingRecord: BoardingRecord | null;
+    onNewSearch: () => void;
+    columns: number;
+};
+export default function CustomerView(props: CustomerViewProps): import("react/jsx-runtime").JSX.Element;
+export {};

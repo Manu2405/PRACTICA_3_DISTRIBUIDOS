@@ -6,19 +6,19 @@ const graph: Record<string, Record<string, number>> = {
   C: { B: 8, E: 7 },
   D: { F: 2 },
   E: { F: 5 },
-  F: {},
+  F: {}
 };
-
-function distanciaDelCamino(g: Record<string, Record<string, number>>, path: string[]) {
-  let total = 0;
-  for (let i = 0; i < path.length - 1; i++) {
-    total += g[path[i]][path[i + 1]];
-  }
-  return total;
-}
 
 export function computeShortestPath(from: string, to: string) {
   const path = dijkstra.find_path(graph, from, to);
-  const distance = distanciaDelCamino(graph, path);
+
+  // 🔥 calcular distancia manualmente
+  let distance = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    distance += graph[current][next];
+  }
+
   return { path, distance };
 }

@@ -45,7 +45,7 @@ Content-Type: application/json
   "reservaId": 1
 }
 
-### Anulación de reserva
+### Anulacion de reserva
 POST {{base}}/anulaciones
 Content-Type: application/json
 
@@ -57,7 +57,7 @@ Content-Type: application/json
   "motivo": "Prueba"
 }
 
-### Devolución de venta
+### Devolucion de venta
 POST {{base}}/anulaciones
 Content-Type: application/json
 
@@ -69,5 +69,57 @@ Content-Type: application/json
   "motivo": "Prueba"
 }
 
-### Auditoría de asiento
+### Auditoria de asiento
 GET {{base}}/asientos/1/auditoria
+
+### Prueba funcional simple Mongo opcional
+# 1. Configurar MONGODB_URI y reiniciar backend
+# 2. Ejecutar esta reserva o venta
+# 3. Verificar en Mongo la coleccion eventos_operaciones
+
+### Reserva con reloj vectorial para auditar en Mongo
+POST {{base}}/reservas
+Content-Type: application/json
+
+{
+  "asientoId": 3,
+  "pasajeroId": 1,
+  "nodoOrigen": "NODO_1",
+  "relojVector": "{\"NODO_1\":1}",
+  "lamportTimestamp": 4,
+  "minutosExpiracion": 1
+}
+
+### Lamport: generar timestamp por nodo
+POST {{base}}/algoritmia/lamport/generar
+Content-Type: application/json
+
+{
+  "nodoId": "NODO_1"
+}
+
+### Lamport: incrementar evento local
+POST {{base}}/algoritmia/lamport/incrementar
+Content-Type: application/json
+
+{
+  "relojLocal": 3
+}
+
+### Lamport: combinar al recibir remoto
+POST {{base}}/algoritmia/lamport/combinar
+Content-Type: application/json
+
+{
+  "local": 3,
+  "incoming": 8
+}
+
+### Lamport: comparar eventos
+POST {{base}}/algoritmia/lamport/comparar
+Content-Type: application/json
+
+{
+  "eventoA": { "nodeId": "NODO_1", "lamportTimestamp": 8 },
+  "eventoB": { "nodeId": "NODO_2", "lamportTimestamp": 8 }
+}

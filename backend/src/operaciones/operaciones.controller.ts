@@ -9,7 +9,7 @@ export class OperacionesController {
 
   /**
    * POST /reservas
-   * Body: { asientoId, pasajeroId, nodoOrigen?, relojVector?, minutosExpiracion? }
+   * Body: { asientoId, pasajeroId, nodoOrigen?, relojVector?, lamportTimestamp?, lamportRemoto?, minutosExpiracion? }
    */
   @Post('reservas')
   reservar(@Body() dto: ReservaDto) {
@@ -18,7 +18,7 @@ export class OperacionesController {
 
   /**
    * POST /ventas
-   * Body: { asientoId, pasajeroId, reservaId?, nodoOrigen?, relojVector? }
+   * Body: { asientoId, pasajeroId, reservaId?, nodoOrigen?, relojVector?, lamportTimestamp?, lamportRemoto? }
    */
   @Post('ventas')
   vender(@Body() dto: VentaDto) {
@@ -27,7 +27,7 @@ export class OperacionesController {
 
   /**
    * POST /anulaciones
-   * Body: { asientoId, pasajeroId, reservaId?, ventaId?, motivo?, tipo?, nodoOrigen?, relojVector? }
+   * Body: { asientoId, pasajeroId, reservaId?, ventaId?, motivo?, tipo?, nodoOrigen?, relojVector?, lamportTimestamp?, lamportRemoto? }
    */
   @Post('anulaciones')
   anular(@Body() dto: AnulacionDto) {

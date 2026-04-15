@@ -1,0 +1,112 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sarp_sqlserver
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SQLSERVER_SA_PASSWORD:-Your_strong_Password123!}
+      MSSQL_DATABASE: ${SQLSERVER_DB:-sarp_demo}
+    ports:
+      - "${SQLSERVER_PORT:-15433}:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    command: >
+      /bin/bash -c "
+      /opt/mssql/bin/sqlservr &
+      pid=$$!;
+      if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then
+        sqlcmd_bin=/opt/mssql-tools18/bin/sqlcmd;
+      else
+        sqlcmd_bin=/opt/mssql-tools/bin/sqlcmd;
+      fi;
+      echo 'Esperando SQL Server...';
+      until $$sqlcmd_bin -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" >/dev/null 2>&1; do
+        sleep 2;
+      done;
+      $$sqlcmd_bin -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"IF DB_ID(N'$$MSSQL_DATABASE') IS NULL CREATE DATABASE [$$MSSQL_DATABASE]\" || true;
+      wait $$pid
+      "
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\"; else /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\"; fi || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  mongo:
+    image: mongo:7
+    container_name: sarp_mongo
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT:-27018}:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval \"db.adminCommand({ ping: 1 }).ok\" mongodb://localhost:27017/admin | grep 1 || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  backend:
+    image: node:20-bookworm
+    container_name: sarp_backend
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+    environment:
+      DATABASE_URL: "sqlserver://sqlserver:1433;database=aviones_distribuidos;user=sa;password=SarpDemo2026Aa1;encrypt=true;trustServerCertificate=true"
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-sarp_auditoria}
+      MONGODB_COLLECTION_EVENTOS: ${MONGODB_COLLECTION_EVENTOS:-eventos_operaciones}
+      SQLSERVER_HOST: sqlserver
+      SQLSERVER_PORT_INTERNAL: 1433
+    ports:
+      - "${BACKEND_PORT:-3002}:3001"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    command: ["node", "scripts/docker-bootstrap.js"]
+
+  frontend:
+    image: node:20-bookworm
+    container_name: sarp_frontend
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3002}
+    ports:
+      - "${FRONTEND_PORT:-3003}:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command:
+      [
+        "bash",
+        "-lc",
+        "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+      ]
+
+volumes:
+  sqlserver_data:
+  mongo_data:
+  backend_node_modules:
+  frontend_node_modules:

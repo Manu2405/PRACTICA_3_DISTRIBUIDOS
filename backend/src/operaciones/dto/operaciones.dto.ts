@@ -28,6 +28,18 @@ export class ReservaDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(0)
+  lamportTimestamp?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  lamportRemoto?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   @Min(1)
   minutosExpiracion?: number;
 }
@@ -53,6 +65,18 @@ export class VentaDto {
   @IsOptional()
   @IsString()
   relojVector?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  lamportTimestamp?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  lamportRemoto?: number;
 }
 
 export class AnulacionDto {
@@ -79,8 +103,8 @@ export class AnulacionDto {
   motivo?: string;
 
   @IsOptional()
-  @IsIn(['ANULACION', 'DEVOLUCION'])
-  tipo?: 'ANULACION' | 'DEVOLUCION';
+  @IsIn(['ANULACION', 'DEVOLUCION', 'RESERVA', 'VENTA'])
+  tipo?: 'ANULACION' | 'DEVOLUCION' | 'RESERVA' | 'VENTA';
 
   @IsOptional()
   @IsString()
@@ -89,4 +113,16 @@ export class AnulacionDto {
   @IsOptional()
   @IsString()
   relojVector?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  lamportTimestamp?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  lamportRemoto?: number;
 }
